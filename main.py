@@ -1,102 +1,130 @@
+#!/usr/bin/env python
+# coding: utf-8
+"""
+Gestor de Régimen – PyQt5
+"""
+
+import os
 import sys
 import pyodbc
+from typing import Dict
+
 from PyQt5.QtWidgets import (
-    QApplication, QDialog, QVBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox
+    QApplication,
+    QVBoxLayout,
+    QLabel,
+    QLineEdit,
+    QComboBox,
+    QPushButton,
+    QMessageBox,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+
 from Modules.style import RoundedWindow
+from Modules.resources import ICON_PATH
+from Modules.conexion_db import obtener_conexion
+
+# ────────────────────────────────────────────────────────────────
+# Mapeo id  →  nombre del régimen
+REGIMENES: Dict[int, str] = {1: "Docentes", 2: "Régimen Común", 3: "Régimen Policial"}
+# ────────────────────────────────────────────────────────────────
+
 
 class MainWindow(RoundedWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.setWindowTitle("Gestión de Régimen")
         self.setGeometry(100, 100, 400, 320)
 
-        layout = QVBoxLayout()
+        # Ícono de la ventana
+        if os.path.exists(ICON_PATH):
+            self.setWindowIcon(QIcon(ICON_PATH))
+        else:
+            print(f"⚠️  Ícono no encontrado: {ICON_PATH}")
 
-        # Campo para CUIL
-        self.label_cuil = QLabel("Ingrese CUIL:")
-        layout.addWidget(self.label_cuil)
+        # ───── Layout principal ─────
+        layout = QVBoxLayout(self)
 
+        # Entrada de CUIL
+        layout.addWidget(QLabel("Ingrese CUIL:"))
         self.cuil_input = QLineEdit()
         self.cuil_input.setPlaceholderText("CUIL (11 dígitos)")
         layout.addWidget(self.cuil_input)
 
-        # Botón para buscar
-        self.buscar_button = QPushButton("Buscar")
-        self.buscar_button.clicked.connect(self.buscar_persona)
-        layout.addWidget(self.buscar_button)
+        # Botón Buscar
+        btn_buscar = QPushButton("Buscar")
+        btn_buscar.clicked.connect(self.buscar_persona)
+        layout.addWidget(btn_buscar)
 
-        # Etiquetas para mostrar los datos obtenidos
+        # Etiquetas de resultado
         self.label_nombre = QLabel("Nombre:")
-        layout.addWidget(self.label_nombre)
-
         self.label_fec_nac = QLabel("Fecha de Nacimiento:")
-        layout.addWidget(self.label_fec_nac)
-
         self.label_regimen_actual = QLabel("Régimen Actual:")
+        layout.addWidget(self.label_nombre)
+        layout.addWidget(self.label_fec_nac)
         layout.addWidget(self.label_regimen_actual)
 
-        # ComboBox para seleccionar el nuevo régimen
-        self.label_regimen = QLabel("Seleccione Nuevo Régimen:")
-        layout.addWidget(self.label_regimen)
-
+        # Selector de régimen
+        layout.addWidget(QLabel("Seleccione Nuevo Régimen:"))
         self.regimen_combo = QComboBox()
-        self.regimen_combo.addItem("Docentes", 1)
-        self.regimen_combo.addItem("Régimen Común", 2)
-        self.regimen_combo.addItem("Régimen Policial", 3)
+        for id_, nombre in REGIMENES.items():
+            self.regimen_combo.addItem(nombre, id_)
         layout.addWidget(self.regimen_combo)
 
-        # Botón para guardar
-        self.save_button = QPushButton("Guardar")
-        self.save_button.clicked.connect(self.guardar_regimen)
-        layout.addWidget(self.save_button)
+        # Botón Guardar
+        btn_guardar = QPushButton("Guardar")
+        btn_guardar.clicked.connect(self.guardar_regimen)
+        layout.addWidget(btn_guardar)
 
-        self.setLayout(layout)
+    # ═════════ UTILIDADES ═════════
+    def mostrar_mensaje(
+        self,
+        titulo: str,
+        mensaje: str,
+        icon: QMessageBox.Icon = QMessageBox.Information,
+    ) -> None:
+        QMessageBox(icon, titulo, mensaje, parent=self).exec()
 
-    def mostrar_mensaje(self, titulo, mensaje, icon=QMessageBox.Information):
-        """Muestra un mensaje emergente"""
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle(titulo)
-        msg_box.setText(mensaje)
-        msg_box.setIcon(icon)
-        msg_box.exec()
+    def _cuil_valido(self, cuil: str) -> bool:
+        return cuil.isdigit() and len(cuil) == 11
 
-    def buscar_persona(self):
-        """Ejecuta el procedimiento almacenado y muestra los datos de la persona y su régimen actual."""
+    # ═════════ CONSULTAS ═════════
+    def buscar_persona(self) -> None:
+        """Consulta datos personales y régimen actual por CUIL."""
         cuil = self.cuil_input.text().strip()
 
-        # Validación del CUIL
-        if len(cuil) != 11 or not cuil.isdigit():
-            self.mostrar_mensaje("Error", "El CUIL debe tener exactamente 11 dígitos numéricos.", QMessageBox.Warning)
+        if not self._cuil_valido(cuil):
+            self.mostrar_mensaje(
+                "Error", "El CUIL debe tener exactamente 11 dígitos numéricos.", QMessageBox.Warning
+            )
             return
 
         try:
             conn = obtener_conexion()
             cursor = conn.cursor()
 
-            # Obtener datos personales
-            cursor.execute("EXEC Anto_ObtenerPersonaPorCUIL @CUIL = ?", (cuil,))
-            resultado_persona = cursor.fetchone()
-
-            if resultado_persona:
-                nombre = resultado_persona.Apeynom
-                fecha_nac = resultado_persona.Fec_nac.strftime("%d/%m/%Y") if resultado_persona.Fec_nac else "No disponible"
-
+            # Datos personales
+            cursor.execute("EXEC Gestion.dbo.Anto_ObtenerPersonaPorCUIL @CUIL = ?", cuil)
+            persona = cursor.fetchone()
+            if persona:
+                nombre = persona.Apeynom
+                fecha_nac = (
+                    persona.Fec_nac.strftime("%d/%m/%Y") if persona.Fec_nac else "No disponible"
+                )
                 self.label_nombre.setText(f"Nombre: {nombre}")
                 self.label_fec_nac.setText(f"Fecha de Nacimiento: {fecha_nac}")
             else:
                 self.label_nombre.setText("Nombre: No encontrado")
                 self.label_fec_nac.setText("Fecha de Nacimiento: No encontrado")
 
-            # Obtener régimen actual
-            cursor.execute("EXEC anto_regimenactual @CUIL = ?", (cuil,))
-            resultado_regimen = cursor.fetchone()
-
-            if resultado_regimen:
-                regimen_actual = resultado_regimen.REGIMEN
-                self.label_regimen_actual.setText(f"Régimen Actual: {regimen_actual}")
+            # Régimen actual
+            cursor.execute("EXEC Gestion.dbo.anto_regimenactual @CUIL = ?", cuil)
+            reg = cursor.fetchone()
+            if reg:
+                reg_id = int(reg.REGIMEN)
+                reg_nombre = REGIMENES.get(reg_id, "Desconocido")
+                self.label_regimen_actual.setText(f"Régimen Actual: {reg_id} – {reg_nombre}")
             else:
                 self.label_regimen_actual.setText("Régimen Actual: No encontrado")
 
@@ -106,25 +134,31 @@ class MainWindow(RoundedWindow):
         finally:
             conn.close()
 
-    def guardar_regimen(self):
-        """Ejecuta el procedimiento almacenado para actualizar el régimen de la persona."""
+    # ═════════ ACTUALIZAR ═════════
+    def guardar_regimen(self) -> None:
+        """Actualiza el régimen y refresca la vista."""
         cuil = self.cuil_input.text().strip()
-        nuevo_regimen = self.regimen_combo.currentData()
+        nuevo_regimen = int(self.regimen_combo.currentData())
 
-        if len(cuil) != 11 or not cuil.isdigit():
-            self.mostrar_mensaje("Error", "El CUIL debe tener exactamente 11 dígitos numéricos.", QMessageBox.Warning)
+        if not self._cuil_valido(cuil):
+            self.mostrar_mensaje(
+                "Error", "El CUIL debe tener exactamente 11 dígitos numéricos.", QMessageBox.Warning
+            )
             return
 
         try:
             conn = obtener_conexion()
             cursor = conn.cursor()
 
-            cursor.execute("""
-                EXEC Anto_CambiarRegimen @CUIL = ?, @NuevoRegimen = ?
-            """, (cuil, nuevo_regimen))
-
+            cursor.execute(
+                "EXEC Gestion.dbo.Anto_CambiarRegimen @CUIL = ?, @NuevoRegimen = ?", cuil, nuevo_regimen
+            )
             conn.commit()
+
             self.mostrar_mensaje("Éxito", "Régimen actualizado correctamente.")
+
+            # 🔄  Refrescar datos en pantalla
+            self.buscar_persona()
 
         except pyodbc.Error as e:
             print("Error al ejecutar el procedimiento almacenado:", e)
@@ -132,36 +166,10 @@ class MainWindow(RoundedWindow):
         finally:
             conn.close()
 
-# Conexión a la base de datos
-def obtener_conexion():
-    """Intenta conectarse a la base de datos usando diferentes drivers."""
-    drivers = [
-        'ODBC Driver 17 for SQL Server',  
-        'SQL Server Native Client 11.0',  
-        'SQL Server Native Client 10.0',  
-        'SQL Server',  
-    ]
-    server = 'PC-2193'
-    database = 'Aportes'
 
-    for driver in drivers:
-        conexion_str = (
-            f"DRIVER={{{driver}}};"
-            f"SERVER={server};"
-            f"DATABASE={database};"
-            "Trusted_Connection=yes;"
-        )
-        try:
-            conexion = pyodbc.connect(conexion_str)
-            return conexion
-        except pyodbc.Error:
-            continue
-
-    raise Exception("No se pudo conectar a la base de datos.")
-
-# Configuración y ejecución de la aplicación
+# ═════════ MAIN ═════════
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    win = MainWindow()
+    win.show()
     sys.exit(app.exec())
