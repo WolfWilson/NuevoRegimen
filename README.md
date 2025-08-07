@@ -66,6 +66,10 @@ NuevoRegimen/
 │── requirements.txt  # Dependencias del proyecto
 │── README.md      # Documentación del proyecto
 ```
+## 🖥️ Pyinstaller
+```sh
+pyinstaller main.py --onefile --noconsole --icon=Source/icon.ico --add-data "Source;Source" --add-data "Modules/resources.py;Modules" --add-data "Modules/style.py;Modules" --add-data "Modules/conexion_db.py;Modules" --name GestorRegimen
+```
 
 ## 🗃️ Procedimientos Almacenados en SQL Server
 ```sh
