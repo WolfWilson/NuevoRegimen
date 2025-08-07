@@ -7,13 +7,13 @@ from PyQt5.QtWidgets import QMessageBox
 class RoundedWindow(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(Qt.Window)  # Habilita botones de minimizar, maximizar y cerrar
+        self.setWindowFlags(Qt.Window)  # type: ignore[attr-defined]
         self.setStyleSheet(STYLE)  # Aplica el estilo CSS
         self.dragging = False  # Para manejar el arrastre de la ventana
         self.offset = QPoint()  # Para guardar la posición inicial del mouse
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton: # type: ignore[attr-defined]
             self.dragging = True
             self.offset = event.globalPos() - self.pos()
             event.accept()
