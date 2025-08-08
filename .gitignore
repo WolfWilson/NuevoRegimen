@@ -169,3 +169,19 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# PyInstaller
+/dist/
+/build/
+*.spec
+
+# Python cache / venv
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS chaff
+.DS_Store
+Thumbs.db
