@@ -16,7 +16,7 @@ _DRIVERS = [
 
 # Ajusta aquí tu servidor y base de datos
 _SERVER = "SQL01"
-_DATABASE = "Gestion"
+_DATABASE = "Aportes"
 
 
 def obtener_conexion() -> pyodbc.Connection:

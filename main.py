@@ -7,7 +7,7 @@ Gestor de Régimen – PyQt5
 import os
 import sys
 import pyodbc
-from typing import Dict
+from typing import Dict, Optional
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -17,13 +17,13 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QPushButton,
     QMessageBox,
+    QDesktopWidget,
 )
 from PyQt5.QtGui import QIcon
 
 from Modules.style import RoundedWindow
 from Modules.resources import ICON_PATH
 from Modules.conexion_db import obtener_conexion
-from PyQt5.QtWidgets import QDesktopWidget
 
 # ────────────────────────────────────────────────────────────────
 REGIMENES: Dict[int, str] = {1: "Docentes", 2: "Régimen Común", 3: "Régimen Policial"}
@@ -36,7 +36,6 @@ class MainWindow(RoundedWindow):
 
         self.setWindowTitle("Gestión de Régimen")
         self.setFixedSize(340, 380)
-        # self.setGeometry(100, 100, 400, 340)
 
         # Ícono
         if os.path.exists(ICON_PATH):
@@ -48,12 +47,12 @@ class MainWindow(RoundedWindow):
         # Entrada de CUIL
         layout.addWidget(QLabel("Ingrese CUIL:"))
         self.cuil_input = QLineEdit()
-        self.cuil_input.setPlaceholderText("CUIL (11 dígitos)")  # ← fijar después
+        self.cuil_input.setPlaceholderText("CUIL (11 dígitos)")
         layout.addWidget(self.cuil_input)
 
         # Botón Buscar
         btn_buscar = QPushButton("Buscar")
-        btn_buscar.clicked.connect(self.buscar_persona)           # ← conectar después
+        btn_buscar.clicked.connect(self.buscar_persona)
         layout.addWidget(btn_buscar)
 
         # Etiquetas (fucsia) + valores (blanco)
@@ -80,7 +79,7 @@ class MainWindow(RoundedWindow):
 
         # Botón Guardar
         btn_guardar = QPushButton("Guardar")
-        btn_guardar.clicked.connect(self.guardar_regimen)         # ← conectar después
+        btn_guardar.clicked.connect(self.guardar_regimen)
         layout.addWidget(btn_guardar)
 
     # ───────── Utilidades ─────────
@@ -103,24 +102,33 @@ class MainWindow(RoundedWindow):
             self.mostrar_mensaje("Error", "El CUIL debe tener 11 dígitos numéricos.", QMessageBox.Warning)
             return
 
+        conn: Optional[pyodbc.Connection] = None
         try:
             conn = obtener_conexion()
             cur = conn.cursor()
 
-            # Datos personales
-            cur.execute("EXEC Gestion.dbo.Anto_ObtenerPersonaPorCUIL @CUIL = ?", cuil)
+            # Datos personales (DB cambiada a Aportes)
+            cur.execute("EXEC Aportes.dbo.Anto_ObtenerPersonaPorCUIL @CUIL = ?", cuil)
             p = cur.fetchone()
             if p:
-                self.nom_val.setText(p.Apeynom)
-                self.fn_val.setText(p.Fec_nac.strftime("%d/%m/%Y") if p.Fec_nac else "No disponible")
+                # p.Fec_nac podría ser None o datetime/date
+                fec_txt = "No disponible"
+                try:
+                    if getattr(p, "Fec_nac", None):
+                        fec_txt = p.Fec_nac.strftime("%d/%m/%Y")
+                except Exception:
+                    # Si viene como string o formato raro
+                    fec_txt = str(p.Fec_nac)
+                self.nom_val.setText(getattr(p, "Apeynom", ""))
+                self.fn_val.setText(fec_txt)
             else:
                 self.nom_val.setText("No encontrado")
                 self.fn_val.setText("No disponible")
 
-            # Régimen actual
-            cur.execute("EXEC Gestion.dbo.anto_regimenactual @CUIL = ?", cuil)
+            # Régimen actual (DB cambiada a Aportes)
+            cur.execute("EXEC Aportes.dbo.anto_regimenactual @CUIL = ?", cuil)
             r = cur.fetchone()
-            if r:
+            if r and getattr(r, "REGIMEN", None) is not None:
                 reg_id = int(r.REGIMEN)
                 self.reg_val.setText(f"{reg_id} – {REGIMENES.get(reg_id, 'Desconocido')}")
             else:
@@ -130,7 +138,11 @@ class MainWindow(RoundedWindow):
             print("Error SQL:", e)
             self.mostrar_mensaje("Error", "No se pudo obtener los datos.", QMessageBox.Critical)
         finally:
-            conn.close()
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     # ───────── Actualizar ─────────
     def guardar_regimen(self) -> None:
@@ -141,10 +153,15 @@ class MainWindow(RoundedWindow):
             self.mostrar_mensaje("Error", "El CUIL debe tener 11 dígitos numéricos.", QMessageBox.Warning)
             return
 
+        conn: Optional[pyodbc.Connection] = None
         try:
             conn = obtener_conexion()
             cur = conn.cursor()
-            cur.execute("EXEC Gestion.dbo.Anto_CambiarRegimen @CUIL = ?, @NuevoRegimen = ?", cuil, nuevo_regimen)
+            # Cambio a Aportes
+            cur.execute(
+                "EXEC Aportes.dbo.Anto_CambiarRegimen @CUIL = ?, @NuevoRegimen = ?",
+                cuil, nuevo_regimen
+            )
             conn.commit()
             self.mostrar_mensaje("Éxito", "Régimen actualizado correctamente.")
             self.buscar_persona()
@@ -153,7 +170,12 @@ class MainWindow(RoundedWindow):
             print("Error SQL:", e)
             self.mostrar_mensaje("Error", "No se pudo actualizar el régimen.", QMessageBox.Critical)
         finally:
-            conn.close()
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
 
 def center_on_screen(window) -> None:
     """Centra la ventana en la pantalla principal."""
@@ -163,10 +185,12 @@ def center_on_screen(window) -> None:
     y = (screen.height() - size.height()) // 2
     window.move(x, y)
 
+
 # ───────── Main ─────────
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     win = MainWindow()
     center_on_screen(win)  # ← Centrar antes de mostrar
     win.show()
-    sys.exit(app.exec())
+    # PyQt5 usa exec_()
+    sys.exit(app.exec_())
