@@ -68,7 +68,11 @@ NuevoRegimen/
 ```
 ## 🖥️ Pyinstaller
 ```sh
+# 1. Compilar el ejecutable con PyInstaller
 pyinstaller main.py --onefile --noconsole --icon=Source/icon.ico --add-data "Source;Source" --add-data "Modules/resources.py;Modules" --add-data "Modules/style.py;Modules" --add-data "Modules/conexion_db.py;Modules" --name GestorRegimen
+
+# 2. Copiar el ejecutable generado a la carpeta de red, sobrescribiendo si existe
+Copy-Item -Path ".\\dist\\GestorRegimen.exe" -Destination "\\\\fs01\\ExeGSP\\GestorRegimen.exe" -Force
 ```
 
 ## 🗃️ Procedimientos Almacenados en SQL Server
