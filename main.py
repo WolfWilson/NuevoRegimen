@@ -12,13 +12,16 @@ from typing import Dict, Optional
 from PyQt5.QtWidgets import (
     QApplication,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QComboBox,
     QPushButton,
     QMessageBox,
+    QDateEdit,
     QDesktopWidget,
 )
+from PyQt5.QtCore import QDate
 from PyQt5.QtGui import QIcon
 
 from Modules.style import RoundedWindow
@@ -35,7 +38,7 @@ class MainWindow(RoundedWindow):
         super().__init__()
 
         self.setWindowTitle("Gestión de Régimen")
-        self.setFixedSize(340, 380)
+        self.setFixedSize(340, 480)
 
         # Ícono
         if os.path.exists(ICON_PATH):
@@ -81,6 +84,28 @@ class MainWindow(RoundedWindow):
         btn_guardar = QPushButton("Guardar")
         btn_guardar.clicked.connect(self.guardar_regimen)
         layout.addWidget(btn_guardar)
+
+        # ─── Separador visual ───
+        separador = QLabel("──────────────────────────────")
+        separador.setObjectName("etiqueta")
+        layout.addWidget(separador)
+
+        # Selector de nueva fecha de nacimiento
+        lbl_fecha = QLabel("Corregir Fecha de Nacimiento:")
+        lbl_fecha.setObjectName("etiqueta")
+        layout.addWidget(lbl_fecha)
+
+        fecha_layout = QHBoxLayout()
+        self.fecha_input = QDateEdit()
+        self.fecha_input.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_input.setCalendarPopup(True)
+        self.fecha_input.setDate(QDate.currentDate())
+        fecha_layout.addWidget(self.fecha_input)
+
+        btn_corregir_fecha = QPushButton("Confirmar Fecha")
+        btn_corregir_fecha.clicked.connect(self.corregir_fecha_nacimiento)
+        fecha_layout.addWidget(btn_corregir_fecha)
+        layout.addLayout(fecha_layout)
 
     # ───────── Utilidades ─────────
     @staticmethod
@@ -223,6 +248,81 @@ class MainWindow(RoundedWindow):
                 except Exception as e:
                     print(f"[!] Error al cerrar la conexión: {e}")
             print("-" * 26 + " FIN GUARDADO RÉGIMEN " + "-" * 26 + "\n")
+
+    # ───────── Corregir Fecha de Nacimiento ─────────
+    def corregir_fecha_nacimiento(self) -> None:
+        cuil = self.cuil_input.text().strip()
+        nueva_fecha = self.fecha_input.date()  # QDate
+
+        print("\n" + "-"*22 + " INICIO CORRECCIÓN FECHA NACIMIENTO " + "-"*22)
+        print(f"[*] CUIL ingresado: {cuil}")
+        print(f"[*] Nueva fecha seleccionada: {nueva_fecha.toString('dd/MM/yyyy')}")
+
+        if not self._cuil_valido(cuil):
+            print("[!] CUIL inválido.")
+            self.mostrar_mensaje("Error", "El CUIL debe tener 11 dígitos numéricos.", QMessageBox.Warning)
+            print("-" * 72 + "\n")
+            return
+
+        # Convertir QDate a string formato SQL: YYYY-MM-DD
+        fecha_sql = nueva_fecha.toString("yyyy-MM-dd")
+        print(f"[*] Fecha formateada para SQL: {fecha_sql}")
+
+        conn: Optional[pyodbc.Connection] = None
+        try:
+            print("[*] Obteniendo conexión a la base de datos...")
+            conn = obtener_conexion()
+            cur = conn.cursor()
+
+            sp_fecha = "Aportes.dbo.anto_CorregirFechaNacimiento"
+            print(f"[*] Ejecutando SP: {sp_fecha}")
+            print(f"    - @CUIL       = {cuil}")
+            print(f"    - @NuevaFecha = {fecha_sql}")
+
+            cur.execute(
+                f"EXEC {sp_fecha} @CUIL = ?, @NuevaFecha = ?",
+                cuil, fecha_sql
+            )
+            print("[*] SP ejecutado. Realizando commit...")
+            conn.commit()
+            print("[+] Commit realizado con éxito.")
+
+            self.mostrar_mensaje("Éxito", "Fecha de nacimiento actualizada correctamente.")
+            print("[*] Refrescando datos...")
+            self.buscar_persona()
+
+        except pyodbc.Error as e:
+            # El SP ejecuta ROLLBACK internamente y lanza RAISERROR
+            # pyodbc lo captura como ProgrammingError con el mensaje del SP
+            msg_sql = ""
+            if e.args:
+                msg_sql = str(e.args[1]) if len(e.args) > 1 else (str(e.args[0]) if e.args else str(e))
+            else:
+                msg_sql = str(e)
+            print("\n" + "!"*22 + " ERROR AL CORREGIR FECHA DE NACIMIENTO " + "!"*22)
+            print(f"[!!!] Tipo de Error : {type(e).__name__}")
+            print(f"[!!!] Mensaje del SP: {msg_sql}")
+            print(f"[!!!] Args completos: {e.args}")
+            print("!"*78 + "\n")
+            self.mostrar_mensaje(
+                "Error al actualizar fecha",
+                f"No se pudo actualizar la fecha de nacimiento.\n\n{msg_sql}",
+                QMessageBox.Critical,
+            )
+        except Exception as e:
+            print("\n" + "!"*30 + " ERROR INESPERADO " + "!"*30)
+            print(f"[!!!] Tipo de Error: {type(e).__name__}")
+            print(f"[!!!] Error: {e}")
+            print("!"*78 + "\n")
+            self.mostrar_mensaje("Error Inesperado", f"Ocurrió un error inesperado.\n\n{e}", QMessageBox.Critical)
+        finally:
+            if conn is not None:
+                try:
+                    print("[*] Cerrando conexión a la base de datos.")
+                    conn.close()
+                except Exception as e:
+                    print(f"[!] Error al cerrar la conexión: {e}")
+            print("-" * 22 + " FIN CORRECCIÓN FECHA NACIMIENTO " + "-" * 23 + "\n")
 
 
 def center_on_screen(window) -> None:
