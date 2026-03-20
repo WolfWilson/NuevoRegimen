@@ -1,0 +1,230 @@
+/* ═══════════════════════════════════════════════════════════════════
+   UI/style.qss  –  Cyberpunk / Synthwave
+   Gestión de Régimen  ·  La Dimensión del Terror
+   Paleta:  bg #0d0f1a  │  cyan #00e5ff  │  magenta #ff007f
+            surface #080a14  │  text #dde3f0  │  dim #444468
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+QDialog, QWidget {
+    background-color: #0d0f1a;
+    color: #dde3f0;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 13px;
+    border: none;
+}
+
+/* ── Barra de título ──────────────────────────────────────────────── */
+QLabel#titleLabel {
+    color: #00e5ff;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    padding: 2px 0px;
+    background: transparent;
+}
+
+/* ── Botones decorativos de título (tres puntos) ──────────────────── */
+QPushButton#dotBtn {
+    background-color: #1a1d2e;
+    border: 1px solid #2a2e44;
+    border-radius: 6px;
+    min-width:  12px;
+    max-width:  12px;
+    min-height: 12px;
+    max-height: 12px;
+    padding: 0px;
+}
+QPushButton#dotBtn:hover {
+    background-color: #ff007f66;
+    border-color: #ff007f;
+}
+QPushButton#dotBtn:pressed {
+    background-color: #ff007faa;
+}
+
+/* ── Etiquetas de sección (cyan uppercase) ────────────────────────── */
+QLabel#etiqueta {
+    color: #00e5ff;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    background: transparent;
+    padding-top: 4px;
+}
+
+/* ── Valores de info (texto normal) ──────────────────────────────── */
+QLabel {
+    color: #dde3f0;
+    font-family: "Courier New", "Consolas", monospace;
+    background: transparent;
+}
+
+/* ── Panel de información (NOMBRE / FECHA / RÉGIMEN) ─────────────── */
+QFrame#infoBox {
+    background-color: #080a14;
+    border: 1px solid #1c2040;
+    border-radius: 3px;
+}
+
+/* ── Inputs: QLineEdit / QComboBox / QDateEdit ────────────────────── */
+QLineEdit,
+QComboBox,
+QDateEdit {
+    background-color: #080a14;
+    color: #dde3f0;
+    border: 1px solid #00e5ff;
+    border-radius: 3px;
+    padding: 7px 9px;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 13px;
+    selection-background-color: #1f4060;
+    selection-color: #00e5ff;
+}
+QLineEdit:focus,
+QDateEdit:focus {
+    border-color: #ff007f;
+    background-color: #0a0c1f;
+}
+QComboBox:focus {
+    border-color: #ff007f;
+}
+
+/* Flecha del ComboBox */
+QComboBox::drop-down {
+    border: none;
+    width: 22px;
+}
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+/* Lista desplegable del ComboBox */
+QComboBox QAbstractItemView {
+    background-color: #0d0f1a;
+    color: #dde3f0;
+    border: 1px solid #00e5ff;
+    selection-background-color: #1a2f4a;
+    selection-color: #00e5ff;
+    padding: 4px;
+    outline: none;
+}
+
+/* Flecha del DateEdit */
+QDateEdit::drop-down {
+    border: none;
+    width: 22px;
+}
+
+/* ── Botones principales (cyan) ───────────────────────────────────── */
+QPushButton {
+    background-color: transparent;
+    color: #00e5ff;
+    border: 1px solid #00e5ff;
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+QPushButton:hover {
+    background-color: #00e5ff1a;
+    color: #ffffff;
+    border-color: #66f2ff;
+}
+QPushButton:pressed {
+    background-color: #00e5ff33;
+    color: #00e5ff;
+    border-color: #00e5ff;
+}
+QPushButton:disabled {
+    color: #444468;
+    border-color: #2a2e44;
+}
+
+/* ── Botón secundario (magenta) — Confirmar ───────────────────────── */
+QPushButton#btnSecondary {
+    color: #ff007f;
+    border-color: #ff007f;
+}
+QPushButton#btnSecondary:hover {
+    background-color: #ff007f1a;
+    color: #ffffff;
+    border-color: #ff66aa;
+}
+QPushButton#btnSecondary:pressed {
+    background-color: #ff007f33;
+    color: #ff007f;
+}
+
+/* ── Scrollbar (por si aparece) ───────────────────────────────────── */
+QScrollBar:vertical {
+    background: #0d0f1a;
+    width: 8px;
+    border: none;
+}
+QScrollBar::handle:vertical {
+    background: #2a2e44;
+    border-radius: 4px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* ── Calendario popup ─────────────────────────────────────────────── */
+QCalendarWidget {
+    background-color: #0d0f1a;
+    color: #dde3f0;
+    border: 1px solid #00e5ff;
+}
+QCalendarWidget QToolButton {
+    color: #00e5ff;
+    background-color: #0d0f1a;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    border: none;
+    padding: 4px;
+}
+QCalendarWidget QToolButton:hover {
+    background-color: #1a2a40;
+}
+QCalendarWidget QMenu {
+    background-color: #0d0f1a;
+    color: #dde3f0;
+    border: 1px solid #00e5ff;
+}
+QCalendarWidget QAbstractItemView:enabled {
+    color: #dde3f0;
+    background-color: #080a14;
+    selection-background-color: #1a2f4a;
+    selection-color: #00e5ff;
+    alternate-background-color: #0d0f1a;
+}
+QCalendarWidget QAbstractItemView:disabled {
+    color: #444468;
+}
+QCalendarWidget #qt_calendar_navigationbar {
+    background-color: #080a14;
+    border-bottom: 1px solid #1c2040;
+}
+
+/* ── QMessageBox ──────────────────────────────────────────────────── */
+QMessageBox {
+    background-color: #0d0f1a;
+    color: #dde3f0;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 13px;
+}
+QMessageBox QLabel {
+    color: #dde3f0;
+    font-family: "Courier New", "Consolas", monospace;
+}
+QMessageBox QPushButton {
+    min-width: 80px;
+    padding: 7px 16px;
+}

@@ -1,18 +1,30 @@
-# Modules/style.py – Estilo visual alternativo: elegante + profesionalidad
+# Modules/style.py – Carga el tema visual desde UI/style.qss
 
+import os
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QDialog, QMessageBox
+
+from Modules.resources import QSS_PATH
+
+
+def _cargar_qss() -> str:
+    """Lee UI/style.qss y devuelve su contenido como string."""
+    if os.path.exists(QSS_PATH):
+        with open(QSS_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    # Fallback mínimo si el archivo no se encuentra
+    return "QDialog, QWidget { background-color: #0d0f1a; color: #dde3f0; }"
 
 
 class RoundedWindow(QDialog):
     """
-    Ventana con bordes redondeados y arrastre por clic.
-    Aplica un estilo visual definido en STYLE.
+    Ventana sin marco del sistema operativo con arrastre por clic.
+    Carga el estilo desde UI/style.qss en cada instanciación.
     """
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowFlags(Qt.Window)  # type: ignore[attr-defined]
-        self.setStyleSheet(STYLE)
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)  # type: ignore[attr-defined]
+        self.setStyleSheet(_cargar_qss())
         self.dragging = False
         self.offset = QPoint()
 
@@ -30,127 +42,3 @@ class RoundedWindow(QDialog):
     def mouseReleaseEvent(self, event) -> None:
         self.dragging = False
         event.accept()
-
-
-def show_completion_popup(parent, time_elapsed: float) -> None:
-    """
-    Muestra un mensaje de confirmación estilizado.
-    """
-    msg = QMessageBox(parent)
-    msg.setWindowTitle("Operación Completada")
-    msg.setText(f"La operación finalizó en {time_elapsed:.2f} segundos.")
-    msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-    msg.setIcon(QMessageBox.Icon.Information)
-    msg.setStyleSheet(POPUP_STYLE)
-    msg.exec()
-
-
-# ──────────────────────────────────────────────────────────────────────
-# 🎨 ESTILO PRINCIPAL – Elegancia Moderna
-STYLE = """
-QDialog, QWidget {
-    background-color: #2b2d42;
-    border-radius: 16px;
-    color: #edf2f4;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-}
-QLabel#etiqueta {
-    color: #ff1493;  /* Fucsia intenso */
-    font-weight: bold;
-}
-
-
-QLabel {
-    color: #edf2f4;
-    font-weight: 500;
-}
-
-QPushButton {
-    background-color: #8d99ae;
-    color: #2b2d42;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-weight: 600;  
-}
-
-QPushButton:hover {
-    background-color: #a8b5cf;
-}
-
-QPushButton:pressed {
-    background-color: #6c7a96;
-}
-
-QLineEdit, QComboBox {
-    background-color: #1a1c2c;
-    color: #edf2f4;
-    border: 1px solid #8d99ae;
-    padding: 6px;
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-QDateEdit {
-    background-color: #1a1c2c;
-    color: #edf2f4;
-    border: 1px solid #8d99ae;
-    padding: 6px;
-    border-radius: 6px;
-}
-
-QDateEdit::drop-down {
-    border: none;
-}
-
-QDateEdit::down-arrow {
-    width: 14px;
-    height: 14px;
-}
-
-QDateEdit::up-button, QDateEdit::down-button {
-    width: 14px;
-    border: none;
-}
-
-QProgressBar {
-    border: 1px solid #8d99ae;
-    border-radius: 6px;
-    background: #1a1c2c;
-    color: #edf2f4;
-    text-align: center;
-}
-
-QProgressBar::chunk {
-    background-color: #ef233c;
-    width: 20px;
-}
-"""
-
-# 💬 ESTILO PARA MENSAJES EMERGENTES
-POPUP_STYLE = """
-QMessageBox {
-    background-color: #2b2d42;
-    color: #edf2f4;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 14px;
-    font-weight: normal;
-}
-
-QPushButton {
-    background-color: #8d99ae;
-    color: #2b2d42;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-
-QPushButton:hover {
-    background-color: #a8b5cf;
-}
-
-QPushButton:pressed {
-    background-color: #6c7a96;
-}
-"""

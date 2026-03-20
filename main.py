@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QMessageBox,
     QDateEdit,
+    QFrame,
     QDesktopWidget,
 )
 from PyQt5.QtCore import QDate
@@ -38,7 +39,7 @@ class MainWindow(RoundedWindow):
         super().__init__()
 
         self.setWindowTitle("Gestión de Régimen")
-        self.setFixedSize(340, 480)
+        self.setFixedSize(340, 520)
 
         # Ícono
         if os.path.exists(ICON_PATH):
@@ -46,54 +47,78 @@ class MainWindow(RoundedWindow):
 
         # ───── Layout principal ─────
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(14, 10, 14, 14)
+        layout.setSpacing(7)
 
-        # Entrada de CUIL
-        layout.addWidget(QLabel("Ingrese CUIL:"))
+        # ── Barra de título personalizada ──────────────────────────────
+        title_bar = QHBoxLayout()
+        title_bar.setContentsMargins(0, 0, 0, 4)
+        lbl_title = QLabel("// GESTIÓN.RÉGIMEN")
+        lbl_title.setObjectName("titleLabel")
+        title_bar.addWidget(lbl_title)
+        title_bar.addStretch()
+        for i in range(3):
+            dot = QPushButton()
+            dot.setObjectName("dotBtn")
+            dot.setFixedSize(12, 12)
+            if i == 2:
+                dot.clicked.connect(self._cerrar_ventana)
+            title_bar.addWidget(dot)
+            if i < 2:
+                title_bar.addSpacing(5)
+        layout.addLayout(title_bar)
+
+        # ── CUIL ───────────────────────────────────────────────────────
+        lbl_cuil = QLabel("CUIL")
+        lbl_cuil.setObjectName("etiqueta")
+        layout.addWidget(lbl_cuil)
         self.cuil_input = QLineEdit()
-        self.cuil_input.setPlaceholderText("CUIL (11 dígitos)")
+        self.cuil_input.setPlaceholderText("11 dígitos")
         layout.addWidget(self.cuil_input)
 
-        # Botón Buscar
-        btn_buscar = QPushButton("Buscar")
+        btn_buscar = QPushButton("► BUSCAR")
         btn_buscar.clicked.connect(self.buscar_persona)
         layout.addWidget(btn_buscar)
 
-        # Etiquetas (fucsia) + valores (blanco)
-        self.nom_tag = QLabel("Nombre:");              self.nom_tag.setObjectName("etiqueta")
+        # ── Panel de información ────────────────────────────────────────
+        info_frame = QFrame()
+        info_frame.setObjectName("infoBox")
+        info_layout = QVBoxLayout(info_frame)
+        info_layout.setContentsMargins(10, 8, 10, 8)
+        info_layout.setSpacing(1)
+
+        self.nom_tag = QLabel("NOMBRE");          self.nom_tag.setObjectName("etiqueta")
         self.nom_val = QLabel("")
-        self.fn_tag  = QLabel("Fecha de Nacimiento:"); self.fn_tag.setObjectName("etiqueta")
+        self.fn_tag  = QLabel("FEC. NACIMIENTO"); self.fn_tag.setObjectName("etiqueta")
         self.fn_val  = QLabel("")
-        self.reg_tag = QLabel("Régimen Actual:");      self.reg_tag.setObjectName("etiqueta")
+        self.reg_tag = QLabel("RÉGIMEN");         self.reg_tag.setObjectName("etiqueta")
         self.reg_val = QLabel("")
 
         for w in (
             self.nom_tag, self.nom_val,
-            self.fn_tag, self.fn_val,
+            self.fn_tag,  self.fn_val,
             self.reg_tag, self.reg_val,
         ):
-            layout.addWidget(w)
+            info_layout.addWidget(w)
+        layout.addWidget(info_frame)
 
-        # Selector de régimen
-        layout.addWidget(QLabel("Seleccione Nuevo Régimen:"))
+        # ── Nuevo régimen ───────────────────────────────────────────────
+        lbl_reg = QLabel("NUEVO RÉGIMEN")
+        lbl_reg.setObjectName("etiqueta")
+        layout.addWidget(lbl_reg)
         self.regimen_combo = QComboBox()
         for reg_id, nombre in REGIMENES.items():
             self.regimen_combo.addItem(nombre, reg_id)
         layout.addWidget(self.regimen_combo)
 
-        # Botón Guardar
-        btn_guardar = QPushButton("Guardar")
+        btn_guardar = QPushButton("✓ GUARDAR RÉGIMEN")
         btn_guardar.clicked.connect(self.guardar_regimen)
         layout.addWidget(btn_guardar)
 
-        # ─── Separador visual ───
-        separador = QLabel("──────────────────────────────")
-        separador.setObjectName("etiqueta")
-        layout.addWidget(separador)
-
-        # Selector de nueva fecha de nacimiento
-        lbl_fecha = QLabel("Corregir Fecha de Nacimiento:")
-        lbl_fecha.setObjectName("etiqueta")
-        layout.addWidget(lbl_fecha)
+        # ── Sección corrección de fecha ─────────────────────────────────
+        lbl_seccion = QLabel("// CORREGIR FECHA DE NACIMIENTO")
+        lbl_seccion.setObjectName("etiqueta")
+        layout.addWidget(lbl_seccion)
 
         fecha_layout = QHBoxLayout()
         self.fecha_input = QDateEdit()
@@ -102,12 +127,17 @@ class MainWindow(RoundedWindow):
         self.fecha_input.setDate(QDate.currentDate())
         fecha_layout.addWidget(self.fecha_input)
 
-        btn_corregir_fecha = QPushButton("Confirmar Fecha")
+        btn_corregir_fecha = QPushButton("CONFIRMAR")
+        btn_corregir_fecha.setObjectName("btnSecondary")
         btn_corregir_fecha.clicked.connect(self.corregir_fecha_nacimiento)
         fecha_layout.addWidget(btn_corregir_fecha)
         layout.addLayout(fecha_layout)
 
     # ───────── Utilidades ─────────
+    def _cerrar_ventana(self) -> None:
+        """Slot para el botón de cierre de la barra de título."""
+        self.close()
+
     @staticmethod
     def _cuil_valido(cuil: str) -> bool:
         return cuil.isdigit() and len(cuil) == 11

@@ -25,3 +25,6 @@ def resource_path(*parts: str) -> str:
 
 # 👉 Ruta al icono principal
 ICON_PATH = resource_path("Source", "panda.png")
+
+# 👉 Ruta a la hoja de estilos QSS
+QSS_PATH = resource_path("UI", "style.qss")
