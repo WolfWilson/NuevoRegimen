@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QComboBox,
     QPushButton,
+    QCheckBox,
     QMessageBox,
     QDateEdit,
     QFrame,
@@ -39,7 +40,7 @@ class MainWindow(RoundedWindow):
         super().__init__()
 
         self.setWindowTitle("Gestión de Régimen")
-        self.setFixedSize(340, 520)
+        self.setFixedSize(340, 545)
 
         # Ícono
         if os.path.exists(ICON_PATH):
@@ -120,23 +121,43 @@ class MainWindow(RoundedWindow):
         lbl_seccion.setObjectName("etiqueta")
         layout.addWidget(lbl_seccion)
 
+        # Checkbox guardián: habilita el campo y el botón
+        self.chk_habilitar = QCheckBox("HABILITAR MODIFICACIÓN")
+        self.chk_habilitar.setObjectName("chkGuardian")
+        self.chk_habilitar.setChecked(False)
+        layout.addWidget(self.chk_habilitar)
+
         fecha_layout = QHBoxLayout()
         self.fecha_input = QDateEdit()
         self.fecha_input.setDisplayFormat("dd/MM/yyyy")
         self.fecha_input.setCalendarPopup(True)
         self.fecha_input.setDate(QDate.currentDate())
+        self.fecha_input.setEnabled(False)   # deshabilitado por defecto
         fecha_layout.addWidget(self.fecha_input)
 
-        btn_corregir_fecha = QPushButton("CONFIRMAR")
-        btn_corregir_fecha.setObjectName("btnSecondary")
-        btn_corregir_fecha.clicked.connect(self.corregir_fecha_nacimiento)
-        fecha_layout.addWidget(btn_corregir_fecha)
+        self.btn_corregir_fecha = QPushButton("CONFIRMAR")
+        self.btn_corregir_fecha.setObjectName("btnSecondary")
+        self.btn_corregir_fecha.clicked.connect(self.corregir_fecha_nacimiento)
+        self.btn_corregir_fecha.setEnabled(False)  # deshabilitado por defecto
+        fecha_layout.addWidget(self.btn_corregir_fecha)
         layout.addLayout(fecha_layout)
+
+        # Conectar checkbox → habilitar/deshabilitar controles
+        self.chk_habilitar.stateChanged.connect(self._toggle_fecha)
 
     # ───────── Utilidades ─────────
     def _cerrar_ventana(self) -> None:
         """Slot para el botón de cierre de la barra de título."""
         self.close()
+
+    def _toggle_fecha(self, state: int) -> None:
+        """Habilita o deshabilita el input de fecha y el botón confirmar según el checkbox."""
+        habilitado = bool(state)
+        self.fecha_input.setEnabled(habilitado)
+        self.btn_corregir_fecha.setEnabled(habilitado)
+        if not habilitado:
+            # Al desmarcar, resetea la fecha al día actual para evitar datos residuales
+            self.fecha_input.setDate(QDate.currentDate())
 
     @staticmethod
     def _cuil_valido(cuil: str) -> bool:
@@ -318,6 +339,7 @@ class MainWindow(RoundedWindow):
             print("[+] Commit realizado con éxito.")
 
             self.mostrar_mensaje("Éxito", "Fecha de nacimiento actualizada correctamente.")
+            self.chk_habilitar.setChecked(False)  # vuelve a estado seguro
             print("[*] Refrescando datos...")
             self.buscar_persona()
 
