@@ -5,14 +5,18 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPainter, QColor, QPen
 from PyQt5.QtWidgets import QDialog, QStyle, QStyleOption
 
-from Modules.resources import QSS_PATH
+from Modules.resources import QSS_PATH, ARROW_DOWN_PATH
 
 
 def _cargar_qss() -> str:
-    """Lee UI/style.qss y devuelve su contenido como string."""
+    """Lee UI/style.qss y devuelve su contenido como string.
+    Reemplaza el placeholder ARROW_DOWN_PATH con la ruta real del SVG."""
     if os.path.exists(QSS_PATH):
         with open(QSS_PATH, "r", encoding="utf-8") as f:
-            return f.read()
+            qss = f.read()
+        # Normalizar separadores para QSS (usa barras forward)
+        arrow_path = ARROW_DOWN_PATH.replace("\\", "/")
+        return qss.replace("__ARROW_DOWN_PATH__", arrow_path)
     return "QDialog, QWidget { background-color: #0d0f1a; color: #dde3f0; }"
 
 
