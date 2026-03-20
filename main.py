@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QDesktopWidget,
 )
-from PyQt5.QtCore import QDate
+from PyQt5.QtCore import QDate, Qt, Qt
 from PyQt5.QtGui import QIcon
 
 from Modules.style import RoundedWindow
@@ -78,6 +78,7 @@ class MainWindow(RoundedWindow):
         layout.addWidget(self.cuil_input)
 
         btn_buscar = QPushButton("► BUSCAR")
+        btn_buscar.setObjectName("btnPrimary")
         btn_buscar.clicked.connect(self.buscar_persona)
         layout.addWidget(btn_buscar)
 
@@ -85,22 +86,26 @@ class MainWindow(RoundedWindow):
         info_frame = QFrame()
         info_frame.setObjectName("infoBox")
         info_layout = QVBoxLayout(info_frame)
-        info_layout.setContentsMargins(10, 8, 10, 8)
-        info_layout.setSpacing(1)
+        info_layout.setContentsMargins(12, 8, 10, 8)
+        info_layout.setSpacing(4)
 
         self.nom_tag = QLabel("NOMBRE");          self.nom_tag.setObjectName("etiqueta")
-        self.nom_val = QLabel("")
+        self.nom_val = QLabel("");                 self.nom_val.setAlignment(Qt.AlignRight)  # type: ignore[attr-defined]
         self.fn_tag  = QLabel("FEC. NACIMIENTO"); self.fn_tag.setObjectName("etiqueta")
-        self.fn_val  = QLabel("")
+        self.fn_val  = QLabel("");                 self.fn_val.setAlignment(Qt.AlignRight)  # type: ignore[attr-defined]
         self.reg_tag = QLabel("RÉGIMEN");         self.reg_tag.setObjectName("etiqueta")
-        self.reg_val = QLabel("")
+        self.reg_val = QLabel("");                 self.reg_val.setObjectName("valorRegimen"); self.reg_val.setAlignment(Qt.AlignRight)  # type: ignore[attr-defined]
 
-        for w in (
-            self.nom_tag, self.nom_val,
-            self.fn_tag,  self.fn_val,
-            self.reg_tag, self.reg_val,
+        for tag, val in (
+            (self.nom_tag, self.nom_val),
+            (self.fn_tag,  self.fn_val),
+            (self.reg_tag, self.reg_val),
         ):
-            info_layout.addWidget(w)
+            row = QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.addWidget(tag)
+            row.addWidget(val)
+            info_layout.addLayout(row)
         layout.addWidget(info_frame)
 
         # ── Nuevo régimen ───────────────────────────────────────────────
@@ -113,6 +118,7 @@ class MainWindow(RoundedWindow):
         layout.addWidget(self.regimen_combo)
 
         btn_guardar = QPushButton("✓ GUARDAR RÉGIMEN")
+        btn_guardar.setObjectName("btnPrimary")
         btn_guardar.clicked.connect(self.guardar_regimen)
         layout.addWidget(btn_guardar)
 

@@ -6,8 +6,22 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Base ─────────────────────────────────────────────────────────── */
-QDialog, QWidget {
-    background-color: #0d0f1a;
+QDialog {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0.00 #14082a,
+        stop:0.25 #0f0820,
+        stop:0.60 #0b0c1c,
+        stop:1.00 #080a14
+    );
+    color: #dde3f0;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 13px;
+    border: none;
+}
+
+QWidget {
+    background-color: transparent;
     color: #dde3f0;
     font-family: "Courier New", "Consolas", monospace;
     font-size: 13px;
@@ -66,7 +80,16 @@ QLabel {
 QFrame#infoBox {
     background-color: #080a14;
     border: 1px solid #1c2040;
+    border-left: 2px solid #00e5ff;
     border-radius: 3px;
+}
+
+/* Valor del régimen en cyan para destacarlo */
+QLabel#valorRegimen {
+    color: #00e5ff;
+    font-weight: bold;
+    font-family: "Courier New", "Consolas", monospace;
+    font-size: 13px;
 }
 
 /* ── Inputs: QLineEdit / QComboBox / QDateEdit ────────────────────── */
@@ -129,6 +152,13 @@ QPushButton {
     font-size: 12px;
     font-weight: bold;
     letter-spacing: 2px;
+}
+
+/* Botones principales con bold reforzado */
+QPushButton#btnPrimary {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
 }
 QPushButton:hover {
     background-color: #00e5ff1a;
