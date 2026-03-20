@@ -122,7 +122,7 @@ class MainWindow(RoundedWindow):
         layout.addWidget(lbl_seccion)
 
         # Checkbox guardián: habilita el campo y el botón
-        self.chk_habilitar = QCheckBox("HABILITAR MODIFICACIÓN")
+        self.chk_habilitar = QCheckBox("HABILITAR MODIFICACIÓN\nDE FECHA DE NACIMIENTO")
         self.chk_habilitar.setObjectName("chkGuardian")
         self.chk_habilitar.setChecked(False)
         layout.addWidget(self.chk_habilitar)
