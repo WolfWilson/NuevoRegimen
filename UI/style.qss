@@ -117,12 +117,22 @@ QComboBox:focus {
 
 /* Flecha del ComboBox */
 QComboBox::drop-down {
-    border: none;
-    width: 22px;
+    subcontrol-origin: border;
+    subcontrol-position: center right;
+    width: 28px;
+    border-left: 1px solid #00e5ff44;
+    background-color: #0d1a2a;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+QComboBox::drop-down:hover {
+    background-color: #00e5ff1a;
+    border-left-color: #00e5ff;
 }
 QComboBox::down-arrow {
+    image: url(__ARROW_DOWN_PATH__);
     width: 10px;
-    height: 10px;
+    height: 6px;
 }
 /* Lista desplegable del ComboBox */
 QComboBox QAbstractItemView {
