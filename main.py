@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QDesktopWidget,
 )
-from PyQt5.QtCore import QDate, Qt, Qt
+from PyQt5.QtCore import QDate, Qt
 from PyQt5.QtGui import QIcon
 
 from Modules.style import RoundedWindow
@@ -38,6 +38,8 @@ REGIMENES: Dict[int, str] = {1: "Docentes", 2: "Régimen Común", 3: "Régimen P
 class MainWindow(RoundedWindow):
     def __init__(self) -> None:
         super().__init__()
+
+        self.fecha_cargada = QDate.currentDate()
 
         self.setWindowTitle("Gestión de Régimen")
         self.setFixedSize(340, 545)
@@ -137,7 +139,7 @@ class MainWindow(RoundedWindow):
         self.fecha_input = QDateEdit()
         self.fecha_input.setDisplayFormat("dd/MM/yyyy")
         self.fecha_input.setCalendarPopup(True)
-        self.fecha_input.setDate(QDate.currentDate())
+        self.fecha_input.setDate(self.fecha_cargada)
         self.fecha_input.setEnabled(False)   # deshabilitado por defecto
         fecha_layout.addWidget(self.fecha_input)
 
@@ -162,8 +164,20 @@ class MainWindow(RoundedWindow):
         self.fecha_input.setEnabled(habilitado)
         self.btn_corregir_fecha.setEnabled(habilitado)
         if not habilitado:
-            # Al desmarcar, resetea la fecha al día actual para evitar datos residuales
-            self.fecha_input.setDate(QDate.currentDate())
+            self.fecha_input.setDate(self.fecha_cargada)
+
+    @staticmethod
+    def _fecha_a_qdate(fecha) -> Optional[QDate]:
+        if not fecha:
+            return None
+
+        try:
+            return QDate(fecha.year, fecha.month, fecha.day)
+        except AttributeError:
+            try:
+                return QDate.fromString(str(fecha), "yyyy-MM-dd")
+            except Exception:
+                return None
 
     @staticmethod
     def _cuil_valido(cuil: str) -> bool:
@@ -204,17 +218,27 @@ class MainWindow(RoundedWindow):
 
             if p:
                 fec_txt = "No disponible"
+                fecha_qdate = self._fecha_a_qdate(getattr(p, "Fec_nac", None))
                 try:
                     if getattr(p, "Fec_nac", None):
                         fec_txt = p.Fec_nac.strftime("%d/%m/%Y")
                 except Exception as e:
                     fec_txt = str(p.Fec_nac)
                     print(f"[!] Advertencia: No se pudo formatear la fecha de nacimiento. Valor: {p.Fec_nac}. Error: {e}")
+
+                if fecha_qdate is not None and fecha_qdate.isValid():
+                    self.fecha_cargada = fecha_qdate
+                else:
+                    self.fecha_cargada = QDate.currentDate()
+
                 self.nom_val.setText(getattr(p, "Apeynom", ""))
                 self.fn_val.setText(fec_txt)
             else:
+                self.fecha_cargada = QDate.currentDate()
                 self.nom_val.setText("No encontrado")
                 self.fn_val.setText("No disponible")
+
+            self.fecha_input.setDate(self.fecha_cargada)
 
             # Régimen actual
             sp_regimen = "Aportes.dbo.anto_regimenactual"
