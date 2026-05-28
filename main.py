@@ -7,6 +7,7 @@ Gestor de Régimen – PyQt5
 import os
 import sys
 import pyodbc
+from datetime import datetime as pydatetime
 from typing import Dict, Optional
 
 from PyQt5.QtWidgets import (
@@ -23,7 +24,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QDesktopWidget,
 )
-from PyQt5.QtCore import QDate, Qt
+from PyQt5.QtCore import QDate, Qt, QLocale
 from PyQt5.QtGui import QIcon
 
 from Modules.style import RoundedWindow
@@ -138,6 +139,7 @@ class MainWindow(RoundedWindow):
         fecha_layout = QHBoxLayout()
         self.fecha_input = QDateEdit()
         self.fecha_input.setDisplayFormat("dd/MM/yyyy")
+        self.fecha_input.setLocale(QLocale(QLocale.Spanish, QLocale.Argentina))
         self.fecha_input.setCalendarPopup(True)
         self.fecha_input.setDate(self.fecha_cargada)
         self.fecha_input.setEnabled(False)   # deshabilitado por defecto
@@ -171,13 +173,33 @@ class MainWindow(RoundedWindow):
         if not fecha:
             return None
 
-        try:
-            return QDate(fecha.year, fecha.month, fecha.day)
-        except AttributeError:
+        if isinstance(fecha, QDate):
+            return fecha if fecha.isValid() else None
+
+        if hasattr(fecha, "year") and hasattr(fecha, "month") and hasattr(fecha, "day"):
             try:
-                return QDate.fromString(str(fecha), "yyyy-MM-dd")
+                return QDate(fecha.year, fecha.month, fecha.day)
             except Exception:
-                return None
+                pass
+
+        texto = str(fecha).strip()
+        if not texto:
+            return None
+
+        formatos = ("dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "yyyy/MM/dd", "dd-MM-yyyy")
+        for formato in formatos:
+            qdate = QDate.fromString(texto, formato)
+            if qdate.isValid():
+                return qdate
+
+        try:
+            qdate_locale = QLocale(QLocale.Spanish, QLocale.Argentina).toDate(texto, "dd/MM/yyyy")
+            if qdate_locale.isValid():
+                return qdate_locale
+        except Exception:
+            pass
+
+        return None
 
     @staticmethod
     def _cuil_valido(cuil: str) -> bool:
@@ -345,9 +367,9 @@ class MainWindow(RoundedWindow):
             print("-" * 72 + "\n")
             return
 
-        # Convertir QDate a string formato SQL: YYYY-MM-DD
-        fecha_sql = nueva_fecha.toString("yyyy-MM-dd")
-        print(f"[*] Fecha formateada para SQL: {fecha_sql}")
+        # Enviar un tipo fecha real para evitar ambigüedad de locale/formato.
+        fecha_sql = pydatetime(nueva_fecha.year(), nueva_fecha.month(), nueva_fecha.day(), 0, 0, 0)
+        print(f"[*] Fecha formateada para SQL: {fecha_sql.isoformat()}")
 
         conn: Optional[pyodbc.Connection] = None
         try:
@@ -358,7 +380,7 @@ class MainWindow(RoundedWindow):
             sp_fecha = "Aportes.dbo.anto_CorregirFechaNacimiento"
             print(f"[*] Ejecutando SP: {sp_fecha}")
             print(f"    - @CUIL       = {cuil}")
-            print(f"    - @NuevaFecha = {fecha_sql}")
+            print(f"    - @NuevaFecha = {fecha_sql.strftime('%Y-%m-%d %H:%M:%S')}")
 
             cur.execute(
                 f"EXEC {sp_fecha} @CUIL = ?, @NuevaFecha = ?",
